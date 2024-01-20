@@ -1,0 +1,91 @@
+let balance = 200;
+let grades = "3.92";
+let billed = false;
+
+state wait_for_notification() {
+    sleep 1;
+    output "等通知。";
+    sleep 2;
+}
+
+state query_balance() {
+    output "您的校园卡余额是 " + balance + " 元。";
+}
+
+state pay() {
+    output "请输入您的充值金额：";
+    let amount = 0;
+    input_num amount;
+    branch (amount > 0) {
+        balance = balance + amount;
+        output "充值成功，您的当前余额为 " + balance + " 元。";
+    } else {
+        output "充值金额必须为正数。";
+    }
+}
+
+state grade() {
+    output "您的绩点是 " + grades + "。";
+}
+
+state billing() {
+    output "计算机科学与技术专业的学费是 5500 元。";
+    branch (billed) {
+        output "您已经缴费。";
+    } else {
+        branch (balance >= 5500) {
+            output "校园卡余额充足。是否现在缴费？（是 / 否）";
+            let cmd = "";
+            input cmd;
+            branch (cmd == "是") {
+                balance = balance - 5500;
+                billed = true;
+                output "缴费成功，您的当前余额为 " + balance + " 元。";
+            } else {
+                output "您已取消缴费。";
+            }
+        } else {
+            output "您的校园卡余额不足。";
+        }
+    }
+}
+
+state unroll() {
+    output "已为您提交退学申请。再见。";
+    exit;
+}
+
+state service() {
+    output "人工客服当前不在线，请留言。";
+    let msg = "";
+    input msg;
+    output "您的留言已记录，感谢您的反馈。";
+}
+
+state default() {
+    output "抱歉，我不明白您的问题。请尝试其他问题或联系人工客服。";
+}
+
+while (114 < 514) {
+    output "欢迎使用学校客服系统，请问需要什么帮助？[[LF]]（查询...通知 / 查询校园卡余额 / 校园卡充值 / 查询成绩 / 查询学费 / 退学 / 人工）";
+
+    let cmd = "";
+    input cmd timeout(15) {
+        output "[[LF]]您似乎很久没有说话了。[[LF]]一段时间后若无响应，客服会话将自动关闭。";
+    };
+    branch (cmd == "")
+    input cmd timeout(5) {
+        output "[[LF]]客服会话即将关闭，欢迎再次使用客服机器人，再见。";
+        exit;
+    };
+
+    branch ((cmd ~= "通知") || (cmd ~= "什么时候")) wait_for_notification();
+    else branch (cmd ~= "余额") query_balance();
+    else branch (cmd ~= "充值") pay();
+    else branch (cmd ~= "成绩") grade();
+    else branch (cmd ~= "学费") billing();
+    else branch (cmd ~= "退学") unroll();
+    else branch (cmd ~= "人工") service();
+    else branch (cmd ~= "查询") wait_for_notification();
+    else default();
+}

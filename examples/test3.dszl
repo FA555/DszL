@@ -1,0 +1,68 @@
+let balance = 20;
+let data_usage = 2048; // MB
+let cur_plan = "家庭套餐";
+
+state check_balance() {
+    output "您的当前余额为 " + balance + " 元。";
+}
+
+state check_data_usage() {
+    output "您本月已使用的数据流量为 " + data_usage + " MB。";
+}
+
+state change_plan() {
+    output "您现在的套餐为：" + cur_plan + "。[[LF]]请选择您想要更换的套餐（例如家庭套餐、个人套餐、超值套餐），手续费 10 元。";
+    let plan = "";
+    input plan;
+    while (!(plan ~= "^[(家庭)(个人)(超值)]套餐$")) {
+        output "未知套餐，请重新输入。";
+        input plan;
+    }
+    branch (cur_plan == plan) {
+        output "您已经订阅了" + cur_plan + "！";
+    } else branch (balance - 10 >= 0) {
+        balance = balance - 10;
+        cur_plan = plan;
+        output "您已成功更换至" + plan + "。";
+    } else {
+        output "余额不足，无法更换！";
+    }
+}
+
+state recharge() {
+    output "请输入充值金额：";
+    let amount = 0;
+    input_num amount;
+    branch (amount > 0) {
+        balance = balance + amount;
+        output "充值成功，您的余额现在为 " + balance + " 元。";
+    } else {
+        output "充值金额必须为正数！";
+    }
+}
+
+state report_issue() {
+    output "请描述您遇到的问题：";
+    let issue = "";
+    input issue;
+    output "您报告的问题为：“" + issue + "”。我们的技术人员将在三个工作日内回复。";
+}
+
+state get_support() {
+    output "正在为您转接至客服，请稍等。";
+    sleep 2;
+    output "[[LF]]……[[LF]]……[[LF]]【满意度调查】尊敬的客户，您好！为了改善中国移通服务质量，邀请您点击链接 https://m.10068.jp/SLServer/h4ShVa1uε 对相关业务及服务进行评价，感谢您的支持！【中国移通】";
+}
+
+while (true) {
+    output "欢迎使用移通服务中心。请选择服务（余额查询 / 流量查询 / 套餐更换 / 充值 / 故障报告 / 转人工客服）：";
+    let cmd = "";
+    input cmd;
+    branch (cmd ~= "余额查询") check_balance();
+    else branch (cmd ~= "流量查询") check_data_usage();
+    else branch (cmd ~= "套餐更换") change_plan();
+    else branch (cmd ~= "充值") recharge();
+    else branch (cmd ~= "故障报告") report_issue();
+    else branch (cmd ~= "转人工客服") get_support();
+    else output "无法识别命令，请重新输入。";
+}

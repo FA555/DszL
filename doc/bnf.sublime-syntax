@@ -1,0 +1,23 @@
+%YAML 1.2
+---
+name: BNF
+file_extensions:
+  - bnf
+scope: source.bnf
+
+contexts:
+  main:
+    - match: '^<[\w-]+>'
+      scope: entity.name.class.bnf
+    - match: '::='
+      scope: keyword.operator.assignment.bnf
+    - match: '\|'
+      scope: keyword.operator.or.bnf
+    - match: '\(|\)'
+      scope: punctuation.parenthesis.bnf
+    - match: '"[^"]*"'
+      scope: string.quoted.double.bnf
+    - match: '[a-zA-Z][a-zA-Z0-9_-]*'
+      scope: variable.other.bnf
+    - match: '\s+'
+      scope: whitespace

@@ -1,0 +1,89 @@
+let destination = "";
+let booking_number = "🈚︎"; // something strange unicode character that cannot be input
+let travel_date = "20231220";
+let number_of_people = 2;
+let special_requests = "";
+
+state choose_destination() {
+    output "请问您计划去哪里旅游？";
+    input destination;
+    output "好的，您选择了" + destination + "作为旅行目的地。";
+}
+
+state gen_new_booking_number(date num) {
+    booking_number = "BK" + date + "0" + num;
+}
+
+state book_trip() {
+    branch (destination == "")
+        output "请先选择旅行目的地。";
+    else {
+        output "正在为您预订" + destination + "之行。请稍等...";
+        sleep 2;
+        gen_new_booking_number(travel_date number_of_people);
+        output "预订成功！您的预订号为：" + booking_number + "。";
+    }
+}
+
+state view_booking() {
+    branch (booking_number == "🈚︎")
+        output "您还没有预订任何旅行。";
+    else
+        output "您的预订信息如下：[[LF]]旅行目的地：" + destination + "[[LF]]旅行日期：" + travel_date + "[[LF]]人数：" + number_of_people + "[[LF]]特别要求：" + special_requests;
+}
+
+state change_booking() {
+    output "请输入您的预订号：";
+    let booking_number_i = "";
+    input booking_number_i;
+    branch (booking_number_i != booking_number) {
+        output "预订号不匹配！";
+    } else {
+        output "您想要更改什么信息？（旅行日期 / 人数 / 特别要求）";
+        let change_request = "";
+        input change_request;
+        branch (change_request == "旅行日期") {
+            output "请输入新的旅行日期：";
+            input travel_date;
+        } else branch (change_request == "人数") {
+            output "请输入新的人数：";
+            input_num number_of_people;
+        } else branch (change_request == "特别要求") {
+            output "请描述您的特别要求：";
+            input special_requests;
+        }
+        gen_new_booking_number(travel_date number_of_people);
+        output "您的预订信息已更新。预定号为 " + booking_number + "。";
+    }
+}
+
+state cancel_booking() {
+    output "请输入您要取消的预订号：";
+    let booking_number_i = "";
+    input booking_number_i;
+    branch (booking_number_i != booking_number)
+        output "预订号不匹配！";
+    else {
+        booking_number = "🈚︎"; // something strange unicode character that cannot be input
+        output "预订已取消。";
+    }
+}
+
+state get_travel_advice() {
+    output "请输入您想要咨询的旅行目的地：";
+    input destination;
+    output "关于" + destination + "的旅游信息如下...[[LF]]……[[LF]]……[[LF]]……";
+}
+
+while (true) {
+    output "欢迎使用旅游咨询服务。请选择服务：（目的地选择 / 预订旅行 / 查看预订 / 更改预订 / 取消预订 / 获取旅游建议）";
+    let cmd = "";
+    input cmd;
+    branch (cmd ~= "目的地选择") choose_destination();
+    else branch (cmd ~= "预订旅行") book_trip();
+    else branch (cmd ~= "查看预订") view_booking();
+    else branch (cmd ~= "更改预订") change_booking();
+    else branch (cmd ~= "取消预订") cancel_booking();
+    else branch (cmd ~= "获取旅游建议") get_travel_advice();
+    else output "无法识别命令，请重新输入。";
+}

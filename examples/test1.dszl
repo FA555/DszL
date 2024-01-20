@@ -1,0 +1,50 @@
+// ----- 嵌套测试 -----
+
+状态 nested2() {
+    输出 "nested2 ?";
+}
+
+状态 nested() {
+    定义 captured = 114;
+    状态 nested2() {
+        输出 "nested2 !";
+        输出 "captured = " + captured; // 输出 "captured = 114"
+    }
+    nested2(); // 输出 "nested2 !"
+}
+
+nested();
+nested2(); // 输出 "nested2 ?"
+// 输出 "captured = " + captured; // 报错：变量 captured 未定义
+
+输出 "以上是嵌套测试。";
+
+// ----- 匹配测试 -----
+let re = "^1+4\d*$";
+output "正则：" + re;
+let s = "Default String";
+output "请在 5 秒内输入字符串 s：";
+input s timeout(5) {
+    output "[[LF]]超时！[[LF]]采用默认值 s = `" + s + "`";
+};
+branch (s ~= re) {
+    output "能匹配上！";
+} else {
+    output "匹配不上说是？";
+}
+
+// ----- 中文关键字求斐波那契 -----
+定义 斐波那契 = 1;
+输出 "请输入要求斐波那契数列的项数：";
+定义 项数 = 0;
+输入数字 项数;
+定义 当前下标 = 0;
+定义 当前项 = 0;
+定义 上一项 = 1;
+循环 (当前下标 < 项数) {
+    定义 临时 = 当前项;
+    当前项 = 当前项 + 上一项;
+    上一项 = 临时;
+    当前下标 = 当前下标 + 1;
+    输出 "第 " + 当前下标 + " 项是 " + 当前项 + "。";
+}

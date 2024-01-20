@@ -1,0 +1,45 @@
+let amount = 114514;
+let username = "";
+
+state welcome() {
+    output "欢迎使用本系统，请问您的用户名是？";
+    input username;
+    output username + "，您好！";
+}
+
+state complain() {
+    output "您的意见是我们进步的动力，请问您有什么意见？";
+    let complaint = "";
+    input complaint;
+    output "收到意见“" + complaint + "”。我们会尽快处理您的投诉。";
+    thanks();
+}
+
+state bill() {
+    output "您的本月账单为 " + amount + " 元。";
+    thanks();
+}
+
+state thanks() {
+    output "感谢您的使用。[[LF]][[LF]]";
+}
+
+while (true) {
+    branch (username == "") welcome();
+
+    output "请问有什么可以帮您？（投诉 / 账单）";
+    let cmd = "";
+    while (cmd == "") {
+        input cmd timeout(10) {
+            output "[[LF]]您似乎很久没有说话了。[[LF]]一段时间后若无响应，客服会话将自动关闭。";
+        };
+        branch (cmd == "")
+        input cmd timeout(5) {
+            output "[[LF]]客服会话即将关闭，欢迎再次使用客服机器人，再见。";
+            exit;
+        };
+    }
+    branch (cmd ~= "投诉") complain();
+    else branch (cmd ~= "账单") bill();
+    else output "我不明白您的意思。请重新输入。";
+}

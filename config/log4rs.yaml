@@ -1,0 +1,30 @@
+appenders:
+  stdout:
+    kind: console
+    filters:
+      - kind: threshold
+        level: info
+    encoder:
+      pattern: "{h([{d(%H:%M:%S)} {l}] {m}{n})}"
+
+  file:
+    kind: rolling_file
+    path: "instance/run.log"
+    encoder:
+      pattern: "[{d(%Y-%m-%d %H:%M:%S%.3f)} {l}] {m}{n}"
+    policy:
+      kind: compound
+      trigger:
+        kind: size
+        limit: 50kb
+      roller:
+        kind: fixed_window
+        base: 1
+        count: 5
+        pattern: "instance/run.{}.log"
+
+root:
+  level: debug
+  appenders:
+    - stdout
+    - file

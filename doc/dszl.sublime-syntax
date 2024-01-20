@@ -1,0 +1,50 @@
+%YAML 1.2
+---
+name: DSZL
+file_extensions:
+  - dszl
+scope: source.dszl
+
+contexts:
+  main:
+    - include: comments
+    - include: block-comments
+    - include: keywords
+    - include: strings
+    - include: numbers
+    - include: operators
+    - include: expressions
+
+  comments:
+    - match: '//.*'
+      scope: comment.line.double-slash.dszl
+
+  block-comments:
+    - match: '/\*'
+      scope: punctuation.definition.comment.begin.mylang
+      push:
+        - meta_scope: comment.block.mylang
+        - match: '\*/'
+          scope: punctuation.definition.comment.end.mylang
+          pop: true
+        - match: '(?=\*/)'
+          fail: block-comments
+  keywords:
+    - match: '\b(branch|else|while|state|let|exit|output|sleep|input|input_num|timeout|nil|true|false|分支|否则|循环|状态|定义|退出|输出|等待|输入|输入数字|超时|空|真|假)\b'
+      scope: keyword.control.dszl
+
+  strings:
+    - match: '"[^"]*"'
+      scope: string.quoted.double.dszl
+
+  numbers:
+    - match: '\b[\.\d][\.\deE]*\b'
+      scope: constant.numeric.dszl
+
+  operators:
+    - match: '\+|-|!|~=|==|!=|<|<=|>|>=|&&|\|\||=|\(|\)|{|}|;'
+      scope: keyword.operator.dszl
+
+  expressions:
+    - match: '\b(?<!\d)[A-Za-z_]\w*\b(?!-keyword)'
+      scope: variable.other.dszl

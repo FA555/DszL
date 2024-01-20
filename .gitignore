@@ -1,0 +1,7 @@
+/target
+/instance
+
+.DS_Store
+/doc/autogen/
+template.pdf
+*.typ
