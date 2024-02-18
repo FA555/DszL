@@ -29,10 +29,28 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh # 原神，启动
 
 剩下的就不是这里该说的了。更多信息参见[给课程交上去的报告](./doc/main.pdf)。报告当时是一天水出来的，内容比较幽默，别介意。
 
-## 还是来点运行截图吧！
+## 来点运行截图吧！
 
 ![幽默截图1](./doc/img/gui1.png)
 
 ![幽默截图2](./doc/img/gui3.png)
 
-![不幽默截图](./doc/img/tui2.png)
+![不幽默截图](./doc/img/tui2_alter.png)
+
+## Benchmark
+
+DszL 的效率相当拉胯，在作者的机器上每秒钟仅能进行 $10^4$ 的数量级的基本运算，见下图。
+
+![简易 Benchmark](./doc/img/benchmark.png)
+
+## 配套设施
+
+DszL 提供了[配套的 `.sublime-syntax` 文件](./doc/dszl.sublime-syntax)，适用于包括 [Sublime Text](https://www.sublimetext.com/)、[Typst](https://typst.app/home)、[syntect](https://github.com/trishume/syntect/) 等各种需要语法高亮并支持 [`.sublime-syntax`](https://www.sublimetext.com/docs/syntax.html) 的工具。集成方式请自行查阅相关文档。
+
+以下是一些使用例：
+
+![Sublime Text 编辑器](./doc/img/syntax_sublime.png)
+
+![命令行工具 `bat`（fzf 集成）](./doc/img/syntax_bat.png)
+
+与 Typst 的集成参见前文提到的本仓库附带的报告。

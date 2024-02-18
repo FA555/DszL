@@ -1,6 +1,6 @@
 %YAML 1.2
 ---
-name: DSZL
+name: DszL
 file_extensions:
   - dszl
 scope: source.dszl
@@ -21,11 +21,11 @@ contexts:
 
   block-comments:
     - match: '/\*'
-      scope: punctuation.definition.comment.begin.mylang
+      scope: punctuation.definition.comment.begin.dszl
       push:
-        - meta_scope: comment.block.mylang
+        - meta_scope: comment.block.dszl
         - match: '\*/'
-          scope: punctuation.definition.comment.end.mylang
+          scope: punctuation.definition.comment.end.dszl
           pop: true
         - match: '(?=\*/)'
           fail: block-comments
