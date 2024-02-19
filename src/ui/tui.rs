@@ -8,7 +8,7 @@ use std::{io::Write, sync::Arc};
 /// `TuiInteractor` is a struct implementing the `Interact` trait for a text-based user interface.
 ///
 /// It provides methods to handle input and output operations in a TUI environment.
-pub(crate) struct TuiInteractor();
+pub(crate) struct TuiInteractor;
 
 impl TuiInteractor {
     /// Constructs a new `TuiInteractor`.
@@ -17,7 +17,15 @@ impl TuiInteractor {
     ///
     /// - `TuiInteractor`: A new instance of `TuiInteractor`.
     pub(crate) fn new() -> Self {
-        Self()
+        Self
+    }
+}
+
+/// The default implementation of `TuiInteractor`.
+impl Default for TuiInteractor {
+    /// Constructs a new `TuiInteractor`.
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -33,7 +41,7 @@ impl Interact for TuiInteractor {
         print!("├─ ");
         std::io::stdout().flush().unwrap();
 
-        let mut s = String::new();
+        let mut s = String::default();
         std::io::stdin().read_line(&mut s).unwrap();
         s
     }
@@ -74,7 +82,7 @@ impl Interact for TuiInteractor {
         match ret {
             0 => None,
             1 => {
-                let mut s = String::new();
+                let mut s = String::default();
                 std::io::stdin().read_line(&mut s).unwrap();
                 Some(s)
             }
@@ -116,7 +124,7 @@ impl Interact for TuiInteractor {
 /// - `std::io::Result<()>`: Result indicating the success or failure of the application startup and execution.
 pub(crate) fn main(file: String, statements: Vec<Statement>) -> std::io::Result<()> {
     info!("TUI start up with file `{}`.", file);
-    match Visitor::with_interactor(Arc::new(TuiInteractor::new())).executes(statements) {
+    match Visitor::with_interactor(Arc::new(TuiInteractor::default())).executes(statements) {
         Ok(_) | Err(ExecError::Exit) => Ok(()),
         Err(e) => {
             error!("Execution failed with error: {}", e);

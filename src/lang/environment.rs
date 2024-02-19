@@ -24,7 +24,7 @@ impl Environment {
     pub(crate) fn root() -> Self {
         Environment {
             parent: None,
-            variables: HashMap::new(),
+            variables: HashMap::default(),
         }
     }
 
@@ -40,7 +40,7 @@ impl Environment {
     pub(crate) fn derive(parent: &Rc<RefCell<Environment>>) -> Self {
         Environment {
             parent: Some(parent.clone()),
-            variables: HashMap::new(),
+            variables: HashMap::default(),
         }
     }
 

@@ -318,7 +318,7 @@ impl StatementVisitor<()> for Visitor {
     ///
     /// - `ExecResult<()>`: Result of the exit operation.
     fn visit_exit(&mut self, statement: &Statement) -> ExecResult<()> {
-        if let Statement::Exit = statement {
+        if matches!(statement, Statement::Exit) {
             self.log("exit");
 
             Err(ExecError::Exit) // trigger exit
@@ -646,9 +646,9 @@ mod test {
         impl DummyInteractorHelper {
             pub(crate) fn new() -> Self {
                 Self {
-                    upcoming_input: Vec::new(),
+                    upcoming_input: Vec::default(),
                     cur_pos: 0,
-                    output_stream: String::new(),
+                    output_stream: String::default(),
                 }
             }
 
@@ -672,6 +672,12 @@ mod test {
             }
         }
 
+        impl Default for DummyInteractorHelper {
+            fn default() -> Self {
+                Self::new()
+            }
+        }
+
         pub(crate) struct DummyInteractor {
             helper: Arc<Mutex<DummyInteractorHelper>>,
         }
@@ -679,13 +685,19 @@ mod test {
         impl DummyInteractor {
             pub(crate) fn new() -> Self {
                 Self {
-                    helper: Arc::new(Mutex::new(DummyInteractorHelper::new())),
+                    helper: Arc::new(Mutex::new(DummyInteractorHelper::default())),
                 }
             }
 
             pub(crate) fn load_input(&mut self, s: &[Option<&str>]) {
                 let mut helper = self.helper.lock().unwrap();
                 helper.load_input(s);
+            }
+        }
+
+        impl Default for DummyInteractor {
+            fn default() -> Self {
+                Self::new()
             }
         }
 
@@ -738,7 +750,7 @@ while (a < 10) {
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::new()));
+        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::default()));
         match visitor.executes(statements) {
             Ok(_) | Err(ExecError::Exit) => {}
             Err(e) => panic!("Execution failed with error: {}", e),
@@ -765,7 +777,7 @@ branch (a <= 0) {
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::new()));
+        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::default()));
         match visitor.executes(statements) {
             Ok(_) | Err(ExecError::Exit) => {}
             Err(e) => panic!("Execution failed with error: {}", e),
@@ -791,7 +803,7 @@ test(1 1 4 5 1 4);
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::new()));
+        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::default()));
         match visitor.executes(statements) {
             Ok(_) | Err(ExecError::Exit) => {}
             Err(e) => panic!("Execution failed with error: {}", e),
@@ -818,7 +830,7 @@ output b;
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut interactor = DummyInteractor::new();
+        let mut interactor = DummyInteractor::default();
         interactor.load_input(&[Some("hello, fa_"), Some("555")]);
         let mut visitor = Visitor::with_interactor(Arc::new(interactor));
         match visitor.executes(statements) {
@@ -852,7 +864,7 @@ output a + b;
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut interactor = DummyInteractor::new();
+        let mut interactor = DummyInteractor::default();
         interactor.load_input(&[None, Some("1919810")]);
         let mut visitor = Visitor::with_interactor(Arc::new(interactor));
         match visitor.executes(statements) {
@@ -879,7 +891,7 @@ output a < b;
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::new()));
+        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::default()));
         match visitor.executes(statements) {
             Ok(_) | Err(ExecError::Exit) => {}
             Err(e) => panic!("Execution failed with error: {}", e),
@@ -904,7 +916,7 @@ test(1 1 4 5);
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::new()));
+        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::default()));
         match visitor.executes(statements) {
             Ok(_) | Err(ExecError::Exit) => {}
             Err(e) => panic!("Execution failed with error: {}", e),
@@ -925,7 +937,7 @@ output a;
         let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
         assert!(errors.is_empty());
 
-        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::new()));
+        let mut visitor = Visitor::with_interactor(Arc::new(DummyInteractor::default()));
         match visitor.executes(statements) {
             Ok(_) | Err(ExecError::Exit) => {}
             Err(e) => panic!("Execution failed with error: {}", e),

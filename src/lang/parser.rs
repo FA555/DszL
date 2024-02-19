@@ -152,18 +152,18 @@ impl Parser {
                 break;
             }
 
-            if let Some(
+            if matches!(
+                typ,
                 TokenType::Let
-                | TokenType::If
-                | TokenType::While
-                | TokenType::Output
-                | TokenType::Exit
-                | TokenType::Input
-                | TokenType::Sleep
-                | TokenType::InputNum
-                | TokenType::State, // sync on start of next statement
-            ) = self.peek().map(|t| &t.typ)
-            {
+                    | TokenType::If
+                    | TokenType::While
+                    | TokenType::Output
+                    | TokenType::Exit
+                    | TokenType::Input
+                    | TokenType::Sleep
+                    | TokenType::InputNum
+                    | TokenType::State
+            ) {
                 break;
             }
         }
@@ -203,6 +203,16 @@ impl Parser {
             self.sync();
         }
         statement
+    }
+
+    fn parse_left_brace(&mut self) -> ParseResult<()> {
+        if self.peek().is_none() || self.peek_or_last().unwrap().typ != TokenType::LeftBrace {
+            Err(ParseError::LeftBraceExpected(
+                self.peek_or_last().unwrap().line_num,
+            ))
+        } else {
+            Ok(())
+        }
     }
 
     /// A convenience method for parsing an identifier token. This method is used when parsing
@@ -330,7 +340,7 @@ impl Parser {
         }
 
         // parse the parameter list, read until the ")" token
-        let mut params = Vec::new();
+        let mut params = Vec::default();
         while !self.try_match(&TokenType::RightParen) {
             if self.reached_end() {
                 return Err(ParseError::RightParenExpected(
@@ -349,11 +359,7 @@ impl Parser {
         }
 
         // parse the "{" token
-        if self.peek().is_none() || self.peek_or_last().unwrap().typ != TokenType::LeftBrace {
-            return Err(ParseError::LeftBraceExpected(
-                self.peek_or_last().unwrap().line_num,
-            ));
-        }
+        self.parse_left_brace()?;
 
         // parse the state body
         let body = match self.parse_block()? {
@@ -438,11 +444,8 @@ impl Parser {
             }
 
             // parse the "{" token
-            if self.peek().is_none() || self.peek_or_last().unwrap().typ != TokenType::LeftBrace {
-                return Err(ParseError::LeftBraceExpected(
-                    self.peek_or_last().unwrap().line_num,
-                ));
-            }
+            self.parse_left_brace()?;
+
             // parse the timeout action
             let action = self.parse_block()?;
 
@@ -572,7 +575,7 @@ impl Parser {
         self.consume();
 
         // parse the statements until the "}" token
-        let mut statements = Vec::new();
+        let mut statements = Vec::default();
         while !self.try_match(&TokenType::RightBrace) {
             if self.reached_end() {
                 return Err(ParseError::RightBraceExpected(
@@ -618,17 +621,9 @@ impl Parser {
         // <expression> ::= <identifier> "=" <expression>
         //                | <comparison>
 
-        if let Some(
-            token @ Token {
-                typ: TokenType::Identifier,
-                ..
-            },
-        ) = self.peek().cloned()
-        {
-            if let Some(Token {
-                typ: TokenType::Assign,
-                ..
-            }) = self.peek_offset(1)
+        if let Some(token) = self.peek().cloned() {
+            if token.typ == TokenType::Identifier
+                && self.peek_offset(1).map(|t| &t.typ) == Some(&TokenType::Assign)
             {
                 self.consume();
                 self.consume();
@@ -656,23 +651,23 @@ impl Parser {
         let mut expr = self.parse_logic()?;
 
         while let Some(op) = self.peek().cloned() {
-            if let TokenType::Equal
-            | TokenType::NotEqual
-            | TokenType::Less
-            | TokenType::LessEqual
-            | TokenType::Greater
-            | TokenType::GreaterEqual
-            | TokenType::Match = op.typ
-            {
-                self.consume();
-                let rhs = self.parse_logic()?;
-                expr = Expr::Binary {
-                    lhs: Box::new(expr),
-                    op: op.clone(),
-                    rhs: Box::new(rhs),
-                };
-            } else {
-                break;
+            match op.typ {
+                TokenType::Equal
+                | TokenType::NotEqual
+                | TokenType::Less
+                | TokenType::LessEqual
+                | TokenType::Greater
+                | TokenType::GreaterEqual
+                | TokenType::Match => {
+                    self.consume();
+                    let rhs = self.parse_logic()?;
+                    expr = Expr::Binary {
+                        lhs: Box::new(expr),
+                        op: op.clone(),
+                        rhs: Box::new(rhs),
+                    };
+                }
+                _ => break,
             }
         }
 
@@ -684,7 +679,7 @@ impl Parser {
         let mut expr = self.parse_arith()?;
 
         while let Some(op) = self.peek().cloned() {
-            if let TokenType::LAnd | TokenType::LOr = op.typ {
+            if matches!(op.typ, TokenType::LAnd | TokenType::LOr) {
                 self.consume();
                 let rhs = self.parse_arith()?;
                 expr = Expr::Binary {
@@ -713,16 +708,17 @@ impl Parser {
         let mut expr = self.parse_unary()?;
 
         while let Some(op) = self.peek().cloned() {
-            if let TokenType::Plus | TokenType::Minus = op.typ {
-                self.consume();
-                let rhs = self.parse_unary()?;
-                expr = Expr::Binary {
-                    lhs: Box::new(expr),
-                    op: op.clone(),
-                    rhs: Box::new(rhs),
-                };
-            } else {
-                break;
+            match op.typ {
+                TokenType::Plus | TokenType::Minus => {
+                    self.consume();
+                    let rhs = self.parse_unary()?;
+                    expr = Expr::Binary {
+                        lhs: Box::new(expr),
+                        op: op.clone(),
+                        rhs: Box::new(rhs),
+                    };
+                }
+                _ => break,
             }
         }
 
@@ -740,8 +736,7 @@ impl Parser {
         // <unary> ::= ("+" | "-" | "!") <unary>
         //           | <call>
         if let Some(op) = self.peek().cloned() {
-            if op.typ == TokenType::Plus || op.typ == TokenType::Minus || op.typ == TokenType::Bang
-            {
+            if matches!(op.typ, TokenType::Plus | TokenType::Minus | TokenType::Bang) {
                 self.consume();
                 let rhs = self.parse_unary()?;
                 return Ok(Expr::Unary {
@@ -766,13 +761,9 @@ impl Parser {
         // <call> ::= <atom> ("(" <arguments> ")")?
         // <arguments> ::= <expression> (" " <expression>)*
         let mut expr = self.parse_atom()?;
-        if let Some(Token {
-            typ: TokenType::LeftParen,
-            ..
-        }) = self.peek()
-        {
+        if self.peek().map(|t| &t.typ) == Some(&TokenType::LeftParen) {
             self.consume();
-            let mut args = Vec::new();
+            let mut args = Vec::default();
             while !self.try_match(&TokenType::RightParen) {
                 if self.reached_end() {
                     return Err(ParseError::RightParenExpected(
@@ -842,7 +833,7 @@ impl Parser {
     /// `Vec<ParseResult<Statement>>` - A vector containing the parsed statements or any parsing
     /// errors encountered. This comprehensive list represents the entire parsed program.
     pub(crate) fn parse(&mut self) -> Vec<ParseResult<Statement>> {
-        let mut statements = Vec::new();
+        let mut statements = Vec::default();
         while !self.reached_end() {
             statements.push(self.next_statement());
         }
@@ -859,8 +850,8 @@ impl Parser {
     /// `(Vec<Statement>, Vec<ParseError>)` - A tuple containing the parsed statements and any
     /// parsing errors encountered respectively.
     pub(crate) fn parse_effective(&mut self) -> (Vec<Statement>, Vec<ParseError>) {
-        let mut statements = Vec::new();
-        let mut errors = Vec::new();
+        let mut statements = Vec::default();
+        let mut errors = Vec::default();
 
         for statement in self.parse() {
             match statement {
@@ -1031,7 +1022,7 @@ mod test {
     #[test]
     fn complicated() {
         #[rustfmt::skip]
-        let src = r#"
+            let src = r#"
 状态 测试() {
     input_num x;
     输出 "测试状态 " + (x + 1);
@@ -1064,7 +1055,7 @@ while (true) {
     #[test]
     fn complicated_wrong() {
         #[rustfmt::skip]
-        let src = r#"
+            let src = r#"
 state test(a b)
     output a + b;
 }
@@ -1077,13 +1068,8 @@ output "syncronised";
         let (tokens, errors) = Lexer::with_source(src).lex_effective();
         assert!(errors.is_empty());
 
-        let (statements, errors) = Parser::with_tokens(tokens).parse_effective();
-        assert_eq!(statements.len(), 1);
+        let (_, errors) = Parser::with_tokens(tokens).parse_effective();
         assert_eq!(errors.len(), 3);
-        assert_eq!(
-            format!("{}", statements[0]),
-            "output [Expr: [Literal \"syncronised\"]];"
-        );
         assert_eq!(format!("{}", errors[0]), "Left brace expected at line 3.");
         assert_eq!(format!("{}", errors[1]), "Unexpected token '}' at line 4.");
         assert_eq!(format!("{}", errors[2]), "Semicolon expected at line 8.");

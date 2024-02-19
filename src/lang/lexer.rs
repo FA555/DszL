@@ -40,7 +40,7 @@ impl Lexer {
 
         Lexer {
             src,
-            // tokens: Vec::new(),
+            // tokens: Vec::default(),
             start_pos: 0,
             cur_pos: 0,
             line_num: 1,
@@ -120,8 +120,6 @@ impl Lexer {
     /// tokenization, the token will have the `TokenType::Error` variant.
     pub(crate) fn next_token(&mut self) -> Token {
         self.start_pos = self.cur_pos;
-        // let mut typ = TokenType::Unknown;
-
         if self.peek().is_none() {
             return Token::new(TokenType::Eof, "", self.line_num);
         }
@@ -154,11 +152,7 @@ impl Lexer {
                 } else if self.try_match('*') {
                     self.match_block_comment() // /*
                 } else {
-                    return Token::new(
-                        TokenType::Error(LexError::InvalidToken('/', self.line_num)),
-                        "",
-                        self.line_num,
-                    );
+                    TokenType::Error(LexError::InvalidToken('/', self.line_num))
                 }
             }
             '<' => {
@@ -179,33 +173,21 @@ impl Lexer {
                 if self.try_match('&') {
                     TokenType::LAnd // &&
                 } else {
-                    return Token::new(
-                        TokenType::Error(LexError::InvalidToken('&', self.line_num)),
-                        "",
-                        self.line_num,
-                    );
+                    TokenType::Error(LexError::InvalidToken('&', self.line_num))
                 }
             }
             '|' => {
                 if self.try_match('|') {
                     TokenType::LOr // ||
                 } else {
-                    return Token::new(
-                        TokenType::Error(LexError::InvalidToken('|', self.line_num)),
-                        "",
-                        self.line_num,
-                    );
+                    TokenType::Error(LexError::InvalidToken('|', self.line_num))
                 }
             }
             '~' => {
                 if self.try_match('=') {
                     TokenType::Match // ~=
                 } else {
-                    return Token::new(
-                        TokenType::Error(LexError::InvalidToken('~', self.line_num)),
-                        "",
-                        self.line_num,
-                    );
+                    TokenType::Error(LexError::InvalidToken('~', self.line_num))
                 }
             }
             c if c.is_whitespace() => self.match_whitespace(c),
@@ -220,6 +202,10 @@ impl Lexer {
                 );
             }
         };
+
+        if let TokenType::Error(LexError::InvalidToken(_, line_num)) = typ {
+            return Token::new(typ, "", line_num);
+        }
 
         self.cur_token(typ)
     }
@@ -329,7 +315,7 @@ impl Lexer {
     /// A `TokenType` representing the type of the string literal. If an error occurs during parsing
     /// (e.g., unterminated string), the token will have the `TokenType::Error` variant.
     fn match_string(&mut self) -> TokenType {
-        let mut s = String::new();
+        let mut s = String::default();
         while let Some(c) = self.advance() {
             if c == '"' {
                 return TokenType::Str(s);
@@ -356,7 +342,7 @@ impl Lexer {
     /// A `TokenType` representing the type of the number literal. If an error occurs during parsing
     /// (e.g., invalid number), the token will have the `TokenType::Error` variant.
     fn match_number(&mut self, start: char) -> TokenType {
-        let mut s = String::new();
+        let mut s = String::default();
         s.push(start);
 
         while let Some(c) = self.peek() {
@@ -391,7 +377,7 @@ impl Lexer {
     /// keyword, the corresponding `TokenType` will be returned. Otherwise, the token will have the
     /// `TokenType::Identifier` variant.
     fn match_identifier(&mut self, start: char) -> TokenType {
-        let mut s = String::new();
+        let mut s = String::default();
         s.push(start);
 
         while let Some(c) = self.peek() {
@@ -421,7 +407,7 @@ impl Lexer {
     /// A `Vec<Token>` containing all the tokens parsed from the source code. If an error occurs
     /// during tokenization, the token will have the `TokenType::Error` variant.
     pub(crate) fn lex(&mut self) -> Vec<Token> {
-        let mut tokens = Vec::new();
+        let mut tokens = Vec::default();
         loop {
             match self.next_token() {
                 Token {
@@ -447,8 +433,8 @@ impl Lexer {
     /// encountered during tokenization.
     pub(crate) fn lex_effective(&mut self) -> (Vec<Token>, Vec<Token>) {
         let tokens = self.lex();
-        let mut significant_tokens = Vec::new();
-        let mut errors = Vec::new();
+        let mut significant_tokens = Vec::default();
+        let mut errors = Vec::default();
         for token in tokens.into_iter() {
             match token.typ {
                 TokenType::Whitespace
@@ -481,9 +467,9 @@ mod test {
     fn reached_end() {
         let src = "let x = 1;\n";
         let mut lexer = Lexer::with_source(src);
-        assert_eq!(lexer.reached_end(), false);
+        assert!(!lexer.reached_end());
         lexer.cur_pos = src.len();
-        assert_eq!(lexer.reached_end(), true);
+        assert!(lexer.reached_end());
     }
 
     #[test]
@@ -581,8 +567,8 @@ mod test {
     #[test]
     fn lex() {
         #[rustfmt::skip]
-        let src =
-r#"state vegetable() {
+            let src =
+            r#"state vegetable() {
     output "太菜了！";
     sleep 1;
 }"#;
@@ -616,8 +602,8 @@ r#"state vegetable() {
     #[test]
     fn next_token_effective() {
         #[rustfmt::skip]
-        let src =
-r#"state vegetable() {
+            let src =
+            r#"state vegetable() {
     sleep 1;
     branch 114 == 514 {
         output "太菜了！";
@@ -653,8 +639,8 @@ r#"state vegetable() {
     #[test]
     fn efficient_chinese() {
         #[rustfmt::skip]
-        let src =
-r#"状态 菜鸡() {
+            let src =
+            r#"状态 菜鸡() {
     等待 1;
     分支 114 != 514 {
         输出 "太菜了！";
@@ -698,8 +684,8 @@ r#"状态 菜鸡() {
     #[test]
     fn complicated_script() {
         #[rustfmt::skip]
-        let src =
-r#"
+            let src =
+            r#"
 let greeting = "Hello, world!";
 output greeting;
 
@@ -726,7 +712,7 @@ exit;
             Token::new(
                 TokenType::Str(String::from("Hello, world!")),
                 "\"Hello, world!\"",
-                2
+                2,
             )
         );
         assert_eq!(tokens[4], Token::new(TokenType::SemiColon, ";", 2));
@@ -784,8 +770,8 @@ exit;
     #[test]
     fn lex_error() {
         #[rustfmt::skip]
-        let src =
-r#"
+            let src =
+            r#"
 , :
 x = 1e2e3;
 y = "unterminated string;
@@ -808,7 +794,7 @@ z = 1.0e;
             Token::new(
                 TokenType::Error(LexError::InvalidNumber(String::from("1e2e3"), 3)),
                 "1e2e3",
-                3
+                3,
             )
         );
         assert_eq!(
@@ -816,7 +802,7 @@ z = 1.0e;
             Token::new(
                 TokenType::Error(LexError::UnterminatedString(5)),
                 "\"unterminated string;\n",
-                5
+                5,
             )
         );
         assert_eq!(
@@ -824,7 +810,7 @@ z = 1.0e;
             Token::new(
                 TokenType::Error(LexError::InvalidNumber(String::from("1.0e"), 5)),
                 "1.0e",
-                5
+                5,
             )
         );
         assert_eq!(
@@ -832,7 +818,7 @@ z = 1.0e;
             Token::new(
                 TokenType::Error(LexError::UnterminatedComment(7)),
                 "/* unterminated block comment\n",
-                7
+                7,
             )
         );
     }

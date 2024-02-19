@@ -31,10 +31,18 @@ impl SharedData {
     /// Constructs a new `SharedData` instance with default values.
     fn new() -> Self {
         Self {
-            input: String::new(),
+            input: String::default(),
             accept: false,
             updated: false,
         }
+    }
+}
+
+/// The default implementation of `SharedData`.
+impl Default for SharedData {
+    /// Constructs a new `SharedData` instance.
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -60,8 +68,8 @@ impl GuiInteractor {
     pub(crate) fn with_inner(shd: Arc<Mutex<SharedData>>) -> Self {
         Self {
             shd,
-            messages: Arc::new(RwLock::new(Vec::new())),
-            condvar: Condvar::new(),
+            messages: Arc::new(RwLock::new(Vec::default())),
+            condvar: Condvar::default(),
         }
     }
 }
@@ -156,7 +164,7 @@ impl App {
     fn new(interactor: Arc<GuiInteractor>, file: String) -> Self {
         Self {
             interactor,
-            input: String::new(),
+            input: String::default(),
             file,
         }
     }
@@ -216,7 +224,7 @@ impl eframe::App for App {
             if response.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                 let mut shd = self.interactor.shd.lock().unwrap();
                 if shd.accept {
-                    shd.input = self.input.clone();
+                    shd.input.clone_from(&self.input);
                     shd.updated = true;
                     self.interactor.condvar.notify_one();
                     let mut messages = self.interactor.messages.write().unwrap();
@@ -255,7 +263,7 @@ impl eframe::App for App {
 /// `std::io::Result<()>`: Result indicating success or failure of the application initialization and execution.
 pub(crate) fn main(file: String, statements: Vec<Statement>) -> std::io::Result<()> {
     let interactor = Arc::new(GuiInteractor::with_inner(Arc::new(Mutex::new(
-        SharedData::new(),
+        SharedData::default(),
     ))));
     let interactor_clone1 = interactor.clone();
     let interactor_clone2 = interactor.clone();
@@ -266,9 +274,9 @@ pub(crate) fn main(file: String, statements: Vec<Statement>) -> std::io::Result<
         }
     });
 
-    match eframe::run_native(
+    let res = eframe::run_native(
         "DszL 客服机器人",
-        Default::default(),
+        eframe::NativeOptions::default(),
         Box::new(|eframe::CreationContext { egui_ctx, .. }| {
             let mut fonts = egui::FontDefinitions::default();
             fonts.font_data.insert(
@@ -284,7 +292,8 @@ pub(crate) fn main(file: String, statements: Vec<Statement>) -> std::io::Result<
             egui_ctx.set_visuals(egui::Visuals::light());
             Box::new(App::new(interactor_clone2, file))
         }),
-    ) {
+    );
+    match res {
         Ok(_) => Ok(()),
         Err(e) => {
             error!("GUI exited with error: {}", e);
